@@ -35,6 +35,7 @@ GitHub Pages отдаёт только статику, поэтому там ж�
    git push -u origin main
    ```
 3. В репозитории: Settings → Pages → Source: **GitHub Actions**.
+   Запасной вариант, если Actions не используете: Source «Deploy from a branch», ветка `main`, папка `/docs`. Готовая сборка лежит в `docs/` и обновляется командой `npm run build`.
 4. Через минуту сайт откроется на `https://ВАШ-ЛОГИН.github.io/ИМЯ-РЕПОЗИТОРИЯ/`. Адрес и пути подставляются автоматически.
 
 Свой домен: в Settings → Pages укажите домен, а в workflow или через переменную добавьте `CNAME`.

@@ -1,0 +1,2 @@
+User-agent: *
+Sitemap: https://diman-dragon.github.io/datalaw-site/sitemap.xml
