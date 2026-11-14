@@ -4,7 +4,7 @@
 .admin-bar nav { display: flex; gap: 1.4rem; flex-wrap: wrap; font-size: .92rem; }
 .admin-bar nav a { text-decoration: none; color: color-mix(in srgb, var(--paper) 70%, transparent); padding: .3rem 0; }
 .admin-bar nav a:hover, .admin-bar nav a[aria-current] { color: #fff; }
-.admin-bar nav a[aria-current] { box-shadow: 0 2px 0 #4FB3A8; }
+.admin-bar nav a[aria-current] { box-shadow: 0 2px 0 #9A9A9A; }
 .linklike { background: none; border: 0; color: color-mix(in srgb, var(--paper) 70%, transparent); font: inherit; cursor: pointer; padding: .3rem 0; }
 .linklike:hover { color: #fff; }
 .admin-main { padding-top: 2.5rem; padding-bottom: 5rem; }
