@@ -1,0 +1,15 @@
+{
+  "name": "datalaw-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Сайт юридической компании DataLaw Solutions: Node.js + SQLite, без внешних зависимостей",
+  "type": "commonjs",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server.js",
+    "dev": "node --disable-warning=ExperimentalWarning --watch server.js",
+    "seed": "node --disable-warning=ExperimentalWarning scripts/seed.js",
+    "export": "node --disable-warning=ExperimentalWarning scripts/export-content.js",
+    "build": "node --disable-warning=ExperimentalWarning scripts/build-static.js"
+  }
+}
