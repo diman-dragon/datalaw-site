@@ -18,15 +18,12 @@ const ctx = { base, settings: q.settings(), practicesNav: q.practices(), siteUrl
 fs.rmSync(OUT, { recursive: true, force: true });
 const write = (rel, content) => { const f = path.join(OUT, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, content); };
 
-const practices = q.practices(), insights = q.insights();
-write('index.html', pages.home(ctx, { practices, insights: q.insights(3) }));
-write('practices/index.html', pages.practicesIndex(ctx, { practices }));
-practices.forEach((p) => write(`practices/${p.slug}/index.html`, pages.practice(ctx, { p, practices })));
-write('about/index.html', pages.about(ctx, { practices }));
-write('team/index.html', pages.team(ctx, { team: q.team() }));
-write('insights/index.html', pages.insightsIndex(ctx, { insights }));
-insights.forEach((a) => write(`insights/${a.slug}/index.html`, pages.insight(ctx, { a })));
-write('contact/index.html', pages.contact(ctx, { practices, preset: '', sent: false }));
+const practices = q.practices(), news = q.news();
+write('index.html', pages.home(ctx, { practices, news: q.news(3) }));
+practices.forEach((p) => write(`${p.slug}/index.html`, pages.direction(ctx, { p, practices })));
+write('news/index.html', pages.newsIndex(ctx, { news }));
+news.forEach((a) => write(`news/${a.slug}/index.html`, pages.newsItem(ctx, { a })));
+write('contacts/index.html', pages.contacts(ctx, { practices, preset: '', sent: false }));
 write('privacy/index.html', pages.privacy(ctx));
 write('404.html', pages.notFound(ctx));
 write('.nojekyll', '');
@@ -42,7 +39,7 @@ const copy = (src, dst) => {
 copy(path.join(ROOT, 'public'), OUT);
 
 const site = (process.env.SITE_URL || '').replace(/\/$/, '');
-const urls = ['/', '/practices/', '/about/', '/team/', '/insights/', '/contact/', ...practices.map((p) => `/practices/${p.slug}/`), ...insights.map((a) => `/insights/${a.slug}/`)];
+const urls = ['/', '/news/', '/contacts/', ...practices.map((p) => `/${p.slug}/`), ...news.map((a) => `/news/${a.slug}/`)];
 if (site) {
   write('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((u) => `<url><loc>${site}${u}</loc></url>`).join('\n')}\n</urlset>`);
   write('robots.txt', `User-agent: *\nSitemap: ${site}/sitemap.xml\n`);

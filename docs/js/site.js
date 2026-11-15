@@ -34,7 +34,7 @@
         e.preventDefault();
         var to = document.querySelector('a[href^="mailto:"]');
         var email = to ? to.getAttribute('href').replace('mailto:', '') : '';
-        var body = 'Имя: ' + data.name + '\nПочта: ' + data.email + '\nОрганизация: ' + (data.org || '') + '\nНаправление: ' + (data.topic || '') + (data.urgent ? '\nСрочно: да' : '') + '\n\n' + data.message;
+        var body = 'Имя: ' + data.name + '\nТелефон: ' + (data.phone || '') + '\nПочта: ' + (data.email || '') + '\nНаправление: ' + (data.topic || '') + (data.urgent ? '\nСрочно: да' : '') + '\n\n' + data.message;
         location.href = 'mailto:' + email + '?subject=' + encodeURIComponent('Запрос с сайта') + '&body=' + encodeURIComponent(body);
         say('Открыли письмо в вашей почтовой программе. Отправьте его, и мы ответим.', 'ok');
         return;

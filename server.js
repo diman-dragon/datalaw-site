@@ -65,7 +65,7 @@ function serveStatic(res, pathname) {
 async function notifyTelegram(l) {
   const { TELEGRAM_BOT_TOKEN: t, TELEGRAM_CHAT_ID: c } = process.env;
   if (!t || !c) return;
-  const text = `${l.urgent ? 'СРОЧНО. ' : ''}Новая заявка с сайта\n${l.name}, ${l.email}${l.org ? ', ' + l.org : ''}\nНаправление: ${l.topic || 'не указано'}\n\n${l.message.slice(0, 900)}`;
+  const text = `${l.urgent ? 'СРОЧНО. ' : ''}Новая заявка с сайта\n${l.name}${l.email ? ', ' + l.email : ''}${l.phone ? ', ' + l.phone : ''}\nНаправление: ${l.topic || 'не указано'}\n\n${l.message.slice(0, 900)}`;
   try { await fetch(`https://api.telegram.org/bot${t}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: c, text }) }); }
   catch (e) { console.error('Telegram:', e.message); }
 }
@@ -77,17 +77,19 @@ function cors(req) {
 
 async function handleLead(req, res) {
   const wantsJson = (req.headers.accept || '').includes('json') || (req.headers['content-type'] || '').includes('json');
-  const reply = (status, obj, back) => wantsJson ? send(res, status, JSON.stringify(obj), 'application/json; charset=utf-8', cors(req)) : redirect(res, back || '/contact/');
+  const reply = (status, obj, back) => wantsJson ? send(res, status, JSON.stringify(obj), 'application/json; charset=utf-8', cors(req)) : redirect(res, back || '/contacts/');
   if (auth.limited('lead:' + clientIp(req), 5, 3600e3)) return reply(429, { error: 'Слишком много запросов. Попробуйте через час или напишите на почту.' });
   let d; try { d = await readBody(req); } catch { return reply(400, { error: 'Не удалось прочитать форму.' }); }
-  if (d.website) return reply(200, { ok: true }, '/contact/?sent=1'); // honeypot: молча «принимаем»
-  const lead = { name: String(d.name || '').trim().slice(0, 120), email: String(d.email || '').trim().slice(0, 160), org: String(d.org || '').trim().slice(0, 160), topic: String(d.topic || '').trim().slice(0, 120), message: String(d.message || '').trim().slice(0, 4000), urgent: d.urgent === 1 || d.urgent === '1' || d.urgent === true };
-  if (!lead.name) return reply(422, { error: 'Укажите имя.' }, '/contact/');
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(lead.email)) return reply(422, { error: 'Проверьте адрес почты.' });
+  if (d.website) return reply(200, { ok: true }, '/contacts/?sent=1'); // honeypot: молча «принимаем»
+  const lead = { name: String(d.name || '').trim().slice(0, 120), email: String(d.email || '').trim().slice(0, 160), phone: String(d.phone || '').trim().slice(0, 60), topic: String(d.topic || '').trim().slice(0, 120), message: String(d.message || '').trim().slice(0, 4000), urgent: d.urgent === 1 || d.urgent === '1' || d.urgent === true };
+  if (!lead.name) return reply(422, { error: 'Укажите имя.' }, '/contacts/');
+  const emailOk = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(lead.email);
+  if (lead.email && !emailOk) return reply(422, { error: 'Проверьте адрес почты.' });
+  if (!emailOk && lead.phone.replace(/\D/g, '').length < 6) return reply(422, { error: 'Укажите телефон или почту, чтобы мы могли ответить.' });
   if (lead.message.length < 10) return reply(422, { error: 'Опишите ситуацию хотя бы в двух словах.' });
   q.addLead(lead);
   notifyTelegram(lead);
-  return reply(200, { ok: true }, '/contact/?sent=1');
+  return reply(200, { ok: true }, '/contacts/?sent=1');
 }
 
 // ---- админка ----
@@ -139,10 +141,10 @@ async function handleAdmin(req, res, url) {
     return send(res, 200, admin.settingsPage(c, { csrf, saved: url.searchParams.has('saved') }));
   }
 
-  m = p.match(/^\/admin\/(practices|insights|team)(?:\/(new|\d+)(\/delete)?)?$/);
+  m = p.match(/^\/admin\/(practices|news)(?:\/(new|\d+)(\/delete)?)?$/);
   if (m) {
     const [, key, id, del] = m; const e = admin.ENT[key];
-    if (!id) return send(res, 200, admin.listPage(c, key, { csrf, rows: db.prepare(`SELECT * FROM ${e.table} ORDER BY ${key === 'insights' ? 'published_at DESC' : 'sort, id'}`).all() }));
+    if (!id) return send(res, 200, admin.listPage(c, key, { csrf, rows: db.prepare(`SELECT * FROM ${e.table} ORDER BY ${key === 'news' ? 'published_at DESC' : 'sort, id'}`).all() }));
     if (req.method === 'POST') {
       if (del) { db.prepare(`DELETE FROM ${e.table} WHERE id=?`).run(id); return redirect(res, `/admin/${key}`); }
       try { admin.saveEntity(key, id === 'new' ? 0 : Number(id), body); return redirect(res, `/admin/${key}`); }
@@ -157,7 +159,7 @@ async function handleAdmin(req, res, url) {
 
 // ---- публичные страницы ----
 function sitemap() {
-  const urls = ['/', '/practices/', '/about/', '/team/', '/insights/', '/contact/', ...q.practices().map((p) => `/practices/${p.slug}/`), ...q.insights().map((a) => `/insights/${a.slug}/`)];
+  const urls = ['/', '/news/', '/contacts/', ...q.practices().map((p) => `/${p.slug}/`), ...q.news().map((a) => `/news/${a.slug}/`)];
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((u) => `<url><loc>${SITE_URL.replace(/\/$/, '')}${u}</loc></url>`).join('\n')}\n</urlset>`;
 }
 
@@ -166,18 +168,16 @@ function route(req, res, url) {
   if (p === '/robots.txt') return send(res, 200, `User-agent: *\nDisallow: /admin\nSitemap: ${SITE_URL.replace(/\/$/, '')}/sitemap.xml\n`, 'text/plain; charset=utf-8');
   if (p === '/sitemap.xml') return send(res, 200, sitemap(), 'application/xml; charset=utf-8');
   if (!p.endsWith('/') && !path.extname(p)) { res.writeHead(301, { Location: p + '/' + url.search, ...SEC }); return res.end(); }
+  if (p === '/contact/') { res.writeHead(301, { Location: '/contacts/' + url.search, ...SEC }); return res.end(); }
 
-  if (p === '/') return send(res, 200, pages.home(C, { practices: q.practices(), insights: q.insights(3) }));
-  if (p === '/practices/') return send(res, 200, pages.practicesIndex(C, { practices: q.practices() }));
-  let m = p.match(/^\/practices\/([a-z0-9-]+)\/$/);
-  if (m) { const pr = q.practice(m[1]); if (pr) return send(res, 200, pages.practice(C, { p: pr, practices: q.practices() })); }
-  if (p === '/about/') return send(res, 200, pages.about(C, { practices: q.practices() }));
-  if (p === '/team/') return send(res, 200, pages.team(C, { team: q.team() }));
-  if (p === '/insights/') return send(res, 200, pages.insightsIndex(C, { insights: q.insights() }));
-  m = p.match(/^\/insights\/([a-z0-9-]+)\/$/);
-  if (m) { const a = q.insight(m[1]); if (a) return send(res, 200, pages.insight(C, { a })); }
-  if (p === '/contact/') return send(res, 200, pages.contact(C, { practices: q.practices(), preset: url.searchParams.get('topic') || '', sent: url.searchParams.has('sent') }));
+  if (p === '/') return send(res, 200, pages.home(C, { practices: q.practices(), news: q.news(3) }));
+  if (p === '/news/') return send(res, 200, pages.newsIndex(C, { news: q.news() }));
+  let m = p.match(/^\/news\/([a-z0-9-]+)\/$/);
+  if (m) { const a = q.newsItem(m[1]); if (a) return send(res, 200, pages.newsItem(C, { a })); }
+  if (p === '/contacts/') return send(res, 200, pages.contacts(C, { practices: q.practices(), preset: url.searchParams.get('topic') || '', sent: url.searchParams.has('sent') }));
   if (p === '/privacy/') return send(res, 200, pages.privacy(C));
+  m = p.match(/^\/([a-z0-9-]+)\/$/);
+  if (m) { const pr = q.practice(m[1]); if (pr) return send(res, 200, pages.direction(C, { p: pr, practices: q.practices() })); }
   return send(res, 404, pages.notFound(C));
 }
 

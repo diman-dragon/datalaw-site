@@ -1,11 +1,12 @@
-.admin-bar { background: var(--ink); color: var(--paper); }
+.admin-bar { background: var(--navy-deep); color: #fff; border-bottom: 3px solid var(--gold); }
+.admin-bar .brand { font: 600 .95rem var(--sans); color: #fff; }
 .abar { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; min-height: 60px; flex-wrap: wrap; }
 .admin-bar .brand { font-size: .95rem; }
 .admin-bar nav { display: flex; gap: 1.4rem; flex-wrap: wrap; font-size: .92rem; }
-.admin-bar nav a { text-decoration: none; color: color-mix(in srgb, var(--paper) 70%, transparent); padding: .3rem 0; }
+.admin-bar nav a { text-decoration: none; color: #AEB9D0; padding: .3rem 0; }
 .admin-bar nav a:hover, .admin-bar nav a[aria-current] { color: #fff; }
-.admin-bar nav a[aria-current] { box-shadow: 0 2px 0 #9A9A9A; }
-.linklike { background: none; border: 0; color: color-mix(in srgb, var(--paper) 70%, transparent); font: inherit; cursor: pointer; padding: .3rem 0; }
+.admin-bar nav a[aria-current] { box-shadow: 0 2px 0 var(--gold); }
+.linklike { background: none; border: 0; color: #AEB9D0; font: inherit; cursor: pointer; padding: .3rem 0; }
 .linklike:hover { color: #fff; }
 .admin-main { padding-top: 2.5rem; padding-bottom: 5rem; }
 .admin h1 { font-size: clamp(1.8rem, 3vw, 2.4rem); margin-bottom: 1.5rem; }
@@ -22,7 +23,7 @@
 .l-name { font-weight: 500; }
 .urgent-flag { background: #F3D9D9; color: #8A2525; font-size: .75rem; font-weight: 600; padding: .1rem .5rem; border-radius: 999px; margin-left: .4rem; }
 .l-status { justify-self: end; font-size: .85rem; padding: .15rem .7rem; border-radius: 999px; background: var(--tint); color: var(--accent-ink); }
-.l-status.s-new { background: var(--accent); color: #fff; } .l-status.s-spam { background: #ddd; color: #666; }
+.l-status.s-new { background: var(--navy); color: #fff; } .l-status.s-spam { background: #ddd; color: #666; }
 .lead-body { padding: 0 0 1.6rem; max-width: 70ch; }
 .l-msg { background: var(--surface); padding: 1rem 1.2rem; border-radius: 4px; }
 form.inline { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; }
